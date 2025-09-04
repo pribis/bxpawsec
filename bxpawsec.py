@@ -119,16 +119,19 @@ def listRulesDisplay(sg_id, token=None):
             MaxResults=10
         )
     for rule in rules['SecurityGroupRules']:
+        desc = ''
         if 'Description' in rule:
-            print(rule['Description'])
-        print(rule['ToPort'])
-        print(rule['IpProtocol'])
-        print(rule['CidrIpv4'])
-        print('-----------------')
+           desc = rule['Description']
+           
+        print(f'{desc} {rule["CidrIpv4"]} {rule["IpProtocol"]} {rule["ToPort"]}')
 
-    input('Enter to move on')
+    ans = input('Enter to move on (\'quit\' to stop) ')
+    if ans == 'quit':
+        return
+    
     if 'NextToken' not in rules:
         return
+    
     listRulesDisplay(sg_id, rules['NextToken'])
 
 def delRule(sg_id):
