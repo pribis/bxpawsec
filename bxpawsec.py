@@ -1,6 +1,6 @@
 import boto3
 
-profile = 'brian'
+profile = 'default'
 
 def secgroup_loop():
     menu = {}
@@ -8,8 +8,8 @@ def secgroup_loop():
         ans = input('> ')
         match ans:
             case 'help':
-                print('list - list security groups')
-                print('add  - add new security group')
+                print('list rules - list security groups')
+                print('add rule - add new security group')
                 print('exit - exit program')
                 print('quit - exit submenu (or exit program if at the root menu - i.e., this one)')
 
@@ -19,7 +19,7 @@ def secgroup_loop():
                 exit(0)
             case 'list':
                 menu = list()
-            case 'add':
+            case 'add rule':
                 addSg()
             case _:
                 if ans.isdigit():
@@ -37,7 +37,7 @@ def workWithSecgroup(id):
         match ans:
             case 'help':
                 print('list rules - list rules for this group')
-                print('delete - delete this security group')
+                print('del rule - delete this security group')
                 print('quit   - escape this submenu')
             case 'quit':
                 break
@@ -53,15 +53,46 @@ def workWithSecgroup(id):
                 else:
                     print('Not deleting group')
             case 'list rules':
-                listRules(id)
+                listRulesDisplay(id)
+            case 'del rule':
+                delRule(id)
+            case 'add rule':
+                addRule(id)
 
+                
 def addRule(sg_id):
+    session = boto3.session.Session(profile_name=profile)
+    client = session.client('ec2')
+    
     ip = input('IP address: ')
+
+    if '/' not in ip:
+        ip += '/32'
+
     port = input('port: ')
-    proto = input('protocall: ')
+    proto = input('protocol(tcp): ')
+    if proto == '':
+        proto = 'tcp'
+        
     desc = input('description: ')
-  
-def listRules(sg_id, token=None):
+    response = client.authorize_security_group_ingress(
+        GroupId=sg_id,
+        IpPermissions=[
+            {
+                'IpProtocol':proto,
+                'FromPort':int(port),
+                'ToPort':int(port),
+                'IpRanges':[
+                    {
+                        'Description':desc,
+                        'CidrIp':ip,
+                    }]
+            }]
+
+    )
+        
+    
+def listRulesDisplay(sg_id, token=None):
     session = boto3.session.Session(profile_name=profile)
     client = session.client('ec2')
 
@@ -98,9 +129,78 @@ def listRules(sg_id, token=None):
     input('Enter to move on')
     if 'NextToken' not in rules:
         return
-    listRules(sg_id, rules['NextToken'])
+    listRulesDisplay(sg_id, rules['NextToken'])
 
+def delRule(sg_id):
+    session = boto3.session.Session(profile_name=profile)
+    client = session.client('ec2')
+    rules = getRules(sg_id)
     
+
+    rule_ans = input('Rule to delete: ')
+    if rule_ans.isdigit():
+        ans = input('Type \'delete\' to delete rule: ')
+        if ans != 'delete':
+            print('Not deleting rule')
+            return
+        else:
+            if rule_ans not in rules:
+                print('Unknown rule. Not deleting')
+                return
+            else:
+                #Delete rule in rules[rule_ans]['id']
+                response = client.revoke_security_group_ingress(
+                    SecurityGroupRuleIds = [
+                        rules[rule_ans]['id']
+                    ],
+                    GroupId = sg_id
+                )
+    
+def getRules(sg_id):
+    session = boto3.session.Session(profile_name=profile)
+    client = session.client('ec2')
+
+    rules = client.describe_security_group_rules(
+        Filters=[
+            {
+                'Name':'group-id',
+                'Values':[sg_id]
+            }
+        ],
+    )
+
+    count = 1
+    list_rules = {}
+    for rule in rules['SecurityGroupRules']:
+        desc = ''
+        if 'Description' in rule:
+            desc = rule['Description']
+
+        list_rules[str(count)] = {
+            'id':rule['SecurityGroupRuleId'],
+            'ip':rule['CidrIpv4'],
+            'to_port':rule['ToPort'],
+            'proto':rule['IpProtocol'],
+
+        }
+
+        if 'Description' in rule:
+            list_rules[str(count)]['desc'] = rule['Description']
+        count += 1
+
+    for r in list_rules:
+        desc = ''
+        if 'desc' in list_rules[r]:
+            desc = list_rules[r]['desc']
+            
+        print(f'{r} {list_rules[r]["ip"]} {desc}')
+
+
+
+    return list_rules
+
+
+
 def addSg():
     session = boto3.session.Session(profile_name=profile)
     client = session.client('ec2')
@@ -109,8 +209,16 @@ def addSg():
         print('Creating of security group failed')
         return False
 
-    print("Creating using vpc " + vpc)
-    ret = client.create_security_group()
+    name = input('Name: ')
+    desc = input('Description: ')
+    if name and desc:
+        ret = client.create_security_group(
+            Description=desc,
+            GroupName=name,
+            VpcId=vpc
+        )
+    else:
+        print('Not creating security group')
     
 def getVpc():
     session = boto3.session.Session(profile_name=profile)
