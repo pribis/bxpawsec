@@ -37,8 +37,8 @@ def workWithSecgroup(id):
         match ans:
             case 'help':
                 print('list rules - list rules for this group')
-                print('del rule - delete this security group')
-                print('quit   - escape this submenu')
+                print('del rule   - delete a rule')
+                print('quit       - escape this submenu')
             case 'quit':
                 break
             case 'exit':
