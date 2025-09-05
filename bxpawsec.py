@@ -9,7 +9,7 @@ def secgroup_loop():
         match ans:
             case 'help':
                 print('list rules - list security groups')
-                print('add rule - add new security group')
+                print('add - add new security group')
                 print('exit - exit program')
                 print('quit - exit submenu (or exit program if at the root menu - i.e., this one)')
 
@@ -19,12 +19,14 @@ def secgroup_loop():
                 exit(0)
             case 'list':
                 menu = list()
-            case 'add rule':
+            case 'add':
                 addSg()
+                menu = list()
             case _:
                 if ans.isdigit():
                     if ans in menu:
                         workWithSecgroup(menu[ans]['id'])
+                        menu = list()
                     else:
                         print('Unknow menu item')    
                 else:
