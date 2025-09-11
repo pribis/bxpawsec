@@ -8,11 +8,10 @@ def secgroup_loop():
         ans = input('> ')
         match ans:
             case 'help':
-                print('list rules - list security groups')
-                print('add - add new security group')
+                print('list - list security groups')
+                print('add  - add new security group')
                 print('exit - exit program')
                 print('quit - exit submenu (or exit program if at the root menu - i.e., this one)')
-
             case 'exit':
                 exit(0)
             case 'quit':
@@ -26,7 +25,7 @@ def secgroup_loop():
                 if ans.isdigit():
                     if ans in menu:
                         workWithSecgroup(menu[ans]['id'])
-                        menu = list()
+                        #menu = list()
                     else:
                         print('Unknow menu item')    
                 else:
@@ -38,15 +37,17 @@ def workWithSecgroup(id):
         ans = input(id + '> ')
         match ans:
             case 'help':
-                print('list rules - list rules for this group')
-                print('del rule   - delete a rule')
-                print('quit       - escape this submenu')
+                print('list         - list rules for this group')
+                print('delete rule  - delete a rule')
+                print('add rule     - add a rule')
+                print('delete group - delete the current group')
+                print('quit         - escape this submenu')
             case 'quit':
                 break
             case 'exit':
                 print('exit program')
                 exit(0)
-            case 'delete':
+            case 'delete grouop':
                 ans = input('Type \'delete\' to delete this group: ')
                 if ans == 'delete':
                     ret = deleteSg(id)
@@ -54,9 +55,9 @@ def workWithSecgroup(id):
                         break
                 else:
                     print('Not deleting group')
-            case 'list rules':
+            case 'list':
                 listRulesDisplay(id)
-            case 'del rule':
+            case 'delete rule':
                 delRule(id)
             case 'add rule':
                 addRule(id)
@@ -107,7 +108,7 @@ def listRulesDisplay(sg_id, token=None):
                 }
             ],
        
-            MaxResults=10
+            MaxResults=20
         )
     else:
         rules = client.describe_security_group_rules(
@@ -118,17 +119,19 @@ def listRulesDisplay(sg_id, token=None):
                 }
             ],
             NextToken=token,
-            MaxResults=10
+            MaxResults=20
         )
+
+    print('\n')
     for rule in rules['SecurityGroupRules']:
         desc = ''
         if 'Description' in rule:
            desc = rule['Description']
            
-        print(f'{desc} {rule["CidrIpv4"]} {rule["IpProtocol"]} {rule["ToPort"]}')
+        print(f'{rule["CidrIpv4"]} {rule["IpProtocol"]} {rule["ToPort"]} {desc}')
 
-    ans = input('Enter to move on (\'quit\' to stop) ')
-    if ans == 'quit':
+    ans = input('Enter to move on \'stop\' to quit) ')
+    if ans == 'stop':
         return
     
     if 'NextToken' not in rules:
