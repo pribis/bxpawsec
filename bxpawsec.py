@@ -56,7 +56,7 @@ def workWithSecgroup(id):
                 else:
                     print('Not deleting group')
             case 'list':
-                listRulesDisplay(id)
+                r_list = listRulesDisplay(id)
             case 'delete rule':
                 delRule(id)
             case 'add rule':
@@ -95,7 +95,7 @@ def addRule(sg_id):
     )
         
     
-def listRulesDisplay(sg_id, token=None):
+def listRulesDisplay(sg_id, rules_list={}, count=1, token=None):
     session = boto3.session.Session(profile_name=profile)
     client = session.client('ec2')
 
@@ -123,27 +123,40 @@ def listRulesDisplay(sg_id, token=None):
         )
 
     print('\n')
+
     for rule in rules['SecurityGroupRules']:
         desc = ''
         if 'Description' in rule:
            desc = rule['Description']
-           
-        print(f'{rule["CidrIpv4"]} {rule["IpProtocol"]} {rule["ToPort"]} {desc}')
+
+           rules_list[str(count)] = {
+            'id':rule['SecurityGroupRuleId'],
+            'ip':rule['CidrIpv4'],
+            'to_port':rule['ToPort'],
+            'proto':rule['IpProtocol'],
+           }
+
+        if 'Description' in rule:
+            rules_list[str(count)]['desc'] = rule['Description']
+
+        print(f'{count}: {rule["CidrIpv4"]} {rule["IpProtocol"]} {rule["ToPort"]} {desc}')
+        count += 1
 
     ans = input('Enter to move on \'stop\' to quit) ')
     if ans == 'stop':
-        return
+        return rules_list
     
     if 'NextToken' not in rules:
-        return
-    
-    listRulesDisplay(sg_id, rules['NextToken'])
+        return rules_list
+   
+    return listRulesDisplay(sg_id, rules_list, count, rules['NextToken'])
+
 
 def delRule(sg_id):
     session = boto3.session.Session(profile_name=profile)
     client = session.client('ec2')
-    rules = getRules(sg_id)
-    
+
+    rules = listRulesDisplay(sg_id)
 
     rule_ans = input('Rule to delete: ')
     if rule_ans.isdigit():
@@ -156,7 +169,6 @@ def delRule(sg_id):
                 print('Unknown rule. Not deleting')
                 return
             else:
-                #Delete rule in rules[rule_ans]['id']
                 response = client.revoke_security_group_ingress(
                     SecurityGroupRuleIds = [
                         rules[rule_ans]['id']
@@ -164,50 +176,6 @@ def delRule(sg_id):
                     GroupId = sg_id
                 )
     
-def getRules(sg_id):
-    session = boto3.session.Session(profile_name=profile)
-    client = session.client('ec2')
-
-    rules = client.describe_security_group_rules(
-        Filters=[
-            {
-                'Name':'group-id',
-                'Values':[sg_id]
-            }
-        ],
-    )
-
-    count = 1
-    list_rules = {}
-    for rule in rules['SecurityGroupRules']:
-        desc = ''
-        if 'Description' in rule:
-            desc = rule['Description']
-
-        list_rules[str(count)] = {
-            'id':rule['SecurityGroupRuleId'],
-            'ip':rule['CidrIpv4'],
-            'to_port':rule['ToPort'],
-            'proto':rule['IpProtocol'],
-
-        }
-
-        if 'Description' in rule:
-            list_rules[str(count)]['desc'] = rule['Description']
-        count += 1
-
-    for r in list_rules:
-        desc = ''
-        if 'desc' in list_rules[r]:
-            desc = list_rules[r]['desc']
-            
-        print(f'{r} {list_rules[r]["ip"]} {desc}')
-
-
-
-    return list_rules
-
-
 
 def addSg():
     session = boto3.session.Session(profile_name=profile)
