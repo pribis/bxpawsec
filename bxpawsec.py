@@ -3,6 +3,14 @@ import boto3
 profile = 'default'
 
 def secgroup_loop():
+    intro = """
+    Welcome to BXPawsSec
+    A tool for manipulating AWS Security Groups.
+
+    Type 'help' for the help menu."""
+
+    print(intro)
+    
     menu = {}
     while(1):
         ans = input('> ')
