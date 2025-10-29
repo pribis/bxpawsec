@@ -144,10 +144,10 @@ def listRulesDisplay(sg_id, rules_list={}, count=1, token=None):
             'proto':rule['IpProtocol'],
            }
 
-        if 'Description' in rule:
-            rules_list[str(count)]['desc'] = rule['Description']
+  
+           rules_list[str(count)]['desc'] = rule['Description']
 
-        print(f'{count}: {rule["CidrIpv4"]} {rule["IpProtocol"]} {rule["ToPort"]} {desc}')
+        print(f'{count}: {rule["CidrIpv4"]} {rule["IpProtocol"]} {rule["ToPort"]:<10} {desc}')
         count += 1
 
     ans = input('Enter to move on \'stop\' to quit) ')
