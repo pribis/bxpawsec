@@ -55,14 +55,17 @@ def workWithSecgroup(id):
             case 'exit':
                 print('exit program')
                 exit(0)
-            case 'delete grouop':
-                ans = input('Type \'delete\' to delete this group: ')
-                if ans == 'delete':
-                    ret = deleteSg(id)
-                    if ret == True:
-                        break
-                else:
-                    print('Not deleting group')
+            #This is really dangerous, so I am commenting it
+            #out. Uncomment if you know what you are doing.
+            #
+            # case 'delete group':
+            #     ans = input('Type \'delete\' to delete this group: ')
+            #     if ans == 'delete':
+            #         ret = deleteSg(id)
+            #         if ret == True:
+            #             break
+            #     else:
+            #         print('Not deleting group')
             case 'list':
                 r_list = listRulesDisplay(id)
             case 'delete rule':
@@ -80,7 +83,10 @@ def addRule(sg_id):
     if '/' not in ip:
         ip += '/32'
 
-    port = input('port: ')
+    port = input('port(443): ')
+    if(port == ''):
+        port = 443
+        
     proto = input('protocol(tcp): ')
     if proto == '':
         proto = 'tcp'
